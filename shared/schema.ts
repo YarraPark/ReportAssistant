@@ -1,18 +1,17 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+// No database needed - this is a stateless app
+// Schema for report generation request
+export const reportRequestSchema = z.object({
+  studentInfo: z.string().min(1, "Please enter student information"),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export type ReportRequest = z.infer<typeof reportRequestSchema>;
+
+// Schema for report response (placeholder structure for future LLM integration)
+export const reportResponseSchema = z.object({
+  generatedAt: z.string(),
+  content: z.string(),
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
+export type ReportResponse = z.infer<typeof reportResponseSchema>;

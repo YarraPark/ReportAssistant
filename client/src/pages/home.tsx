@@ -152,7 +152,7 @@ const TAB_CONFIGS: TabConfig[] = [
       "Example: Sophie is great in class, really good behaviour. Want to highlight her strong English skills, especially creative writing. Math needs work - struggles with addition but she tries really hard and never gives up. Could benefit from extra support sessions.",
     buttonText: "Draft Report Commentary",
     generatingText: "Drafting Report...",
-    outputTitle: "Generated Report",
+    outputTitle: "Polished Draft Commentary",
   },
   {
     id: "learning-plan",
@@ -165,7 +165,7 @@ const TAB_CONFIGS: TabConfig[] = [
       "Example: Creating plan for Year 4 student, Sarah. Strong in creative arts and verbal skills. Needs support in mathematics, especially multiplication. Interested in animals and science experiments. Will use hands-on learning approach. Have access to library resources and online educational platforms. Learning mostly at home with weekly group activities.",
     buttonText: "Draft Learning Plan",
     generatingText: "Drafting Plan...",
-    outputTitle: "Generated Learning Plan",
+    outputTitle: "Polished Draft Learning Plan",
   },
   {
     id: "lesson-plan",
@@ -178,7 +178,7 @@ const TAB_CONFIGS: TabConfig[] = [
       "Example: Teaching narrative writing to Year 5. Students need to learn story structure with clear beginning, middle, and end. Mixed ability class - some struggle with organizing ideas, others ready for more complex plots. Want to use a mentor text and then guided writing practice. Have 60 minutes. Need to include peer feedback component.",
     buttonText: "Draft Lesson Plan",
     generatingText: "Drafting Lesson...",
-    outputTitle: "Generated Lesson Plan",
+    outputTitle: "Polished Draft Lesson Plan",
   },
 ];
 
@@ -186,6 +186,8 @@ type RefinementOption =
   // Report options
   | "more-positive"
   | "less-positive"
+  | "more-formal"
+  | "less-formal"
   | "more-specific"
   | "focus-strengths"
   | "focus-growth"
@@ -206,6 +208,8 @@ const REFINEMENT_OPTIONS: Record<RefinementOption, string> = {
   // Report options
   "more-positive": "make the tone more positive and encouraging",
   "less-positive": "make the tone more direct and honest about concerns",
+  "more-formal": "rewrite this with more formal, traditional academic language",
+  "less-formal": "rewrite this with a warmer, more conversational (but still professional) tone",
   "more-specific": "add more specific details and examples",
   "focus-strengths": "emphasise strengths and achievements",
   "focus-growth": "focus more on areas for development",
@@ -231,6 +235,8 @@ const ASSISTANT_REFINEMENT_OPTIONS: Record<AssistantType, RefinementOption[]> =
     report: [
       "more-positive",
       "less-positive",
+      "more-formal",
+      "less-formal",
       "more-specific",
       "focus-strengths",
       "focus-growth",
@@ -260,6 +266,8 @@ const REFINEMENT_BUTTON_LABELS: Record<RefinementOption, string> = {
   // Report options
   "more-positive": "Make More Positive",
   "less-positive": "Make Less Positive",
+  "more-formal": "Make More Formal",
+  "less-formal": "Make Less Formal",
   "more-specific": "Make More Specific",
   "focus-strengths": "Focus on Strengths",
   "focus-growth": "Focus on Growth Areas",
@@ -374,16 +382,167 @@ export default function Home() {
     });
   };
 
+  const convertToHTML = (content: string): string => {
+    // Convert **text** to <strong>text</strong>
+    let html = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Split into lines for processing
+    const lines = html.split('\n');
+    const result: string[] = [];
+    let inList = false;
+    let inOrderedList = false;
+    let listStack: string[] = [];
+    let nestingLevel = 0;
+    const MAX_NESTING = 2;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Check if it's a numbered list (e.g., "1. ", "2. ")
+      const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+      if (numberedMatch) {
+        const content = numberedMatch[2];
+
+        if (!inOrderedList) {
+          // Close any bullet list
+          if (inList) {
+            while (listStack.length > 0) {
+              result.push(listStack.pop()!);
+            }
+            listStack = [];
+            inList = false;
+            nestingLevel = 0;
+          }
+          result.push('<ol>');
+          inOrderedList = true;
+        }
+
+        result.push(`<li>${content}</li>`);
+      }
+      // Check if it's a bullet point
+      else if (trimmed.startsWith('- ')) {
+        // Calculate indent level (spaces before the dash)
+        const indent = line.search(/\S/);
+        const content = trimmed.substring(2);
+
+        // Determine nesting level based on indent (0, 2, 4+ spaces)
+        let targetLevel = 0;
+        if (indent >= 4) {
+          // More than 4 spaces - cap at level 2
+          targetLevel = 2;
+        } else if (indent >= 2) {
+          targetLevel = 1;
+        }
+
+        // Enforce maximum nesting of 2 levels
+        if (targetLevel > MAX_NESTING - 1) {
+          targetLevel = MAX_NESTING - 1;
+        }
+
+        if (!inList) {
+          // Close any numbered list
+          if (inOrderedList) {
+            result.push('</ol>');
+            inOrderedList = false;
+          }
+          // Start new list
+          result.push('<ul>');
+          inList = true;
+          nestingLevel = 0;
+        }
+
+        // Adjust nesting level
+        while (nestingLevel > targetLevel) {
+          result.push('</ul>');
+          result.push('</li>');
+          nestingLevel--;
+          listStack.pop();
+        }
+
+        while (nestingLevel < targetLevel && nestingLevel < MAX_NESTING - 1) {
+          // Need to go deeper
+          if (nestingLevel === 0) {
+            result.push('<li>');
+          }
+          result.push('<ul>');
+          listStack.push('</ul></li>');
+          nestingLevel++;
+        }
+
+        // Close previous item at this level if needed
+        if (result[result.length - 1] === '</li>') {
+          // Previous item was closed, continue
+        } else if (nestingLevel > 0 && result[result.length - 1] !== '<ul>') {
+          result.push('</li>');
+        }
+
+        result.push(`<li>${content}`);
+        result.push('</li>');
+
+      } else {
+        // Close any open lists
+        if (inList) {
+          while (listStack.length > 0) {
+            result.push(listStack.pop()!);
+          }
+          result.push('</ul>');
+          listStack = [];
+          inList = false;
+          nestingLevel = 0;
+        }
+        if (inOrderedList) {
+          result.push('</ol>');
+          inOrderedList = false;
+        }
+
+        // Add paragraph or blank line
+        if (trimmed === '') {
+          result.push('<br>');
+        } else {
+          result.push(`<p>${line}</p>`);
+        }
+      }
+    }
+
+    // Close any remaining lists
+    if (inList) {
+      while (listStack.length > 0) {
+        result.push(listStack.pop()!);
+      }
+      result.push('</ul>');
+    }
+    if (inOrderedList) {
+      result.push('</ol>');
+    }
+
+    return result.join('');
+  };
+
   const handleCopyToClipboard = async () => {
     if (!generatedOutput) return;
 
     try {
-      await navigator.clipboard.writeText(generatedOutput);
+      // Convert content to HTML
+      const htmlContent = convertToHTML(generatedOutput);
+
+      // Create blobs for both HTML and plain text
+      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+      const textBlob = new Blob([generatedOutput], { type: 'text/plain' });
+
+      // Write both formats to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': htmlBlob,
+          'text/plain': textBlob
+        })
+      ]);
+
       setIsCopied(true);
 
       toast({
         title: "Copied!",
-        description: "Content copied to clipboard",
+        description: "Content copied to clipboard with formatting",
       });
 
       // Reset after 2 seconds
@@ -469,6 +628,20 @@ LANGUAGE GUIDELINES:
 - Avoid casual language or contractions
 - Use specific examples when provided in the notes
 
+CRITICAL: ALWAYS USE AUSTRALIAN ENGLISH SPELLING
+- behaviour (not behavior)
+- colour (not color)
+- centre (not center)
+- recognise (not recognize)
+- organisation (not organization)
+- practise (verb), practice (noun)
+- analyse (not analyze)
+- programme (not program, except for computer programs)
+- specialise (not specialize)
+- learnt (not learned)
+
+This is non-negotiable - all content must use Australian English spelling conventions.
+
 EXAMPLE STYLE (note the paragraph format with no structural elements):
 '[Student] has demonstrated strong progress in literacy this term, with notable development in reading comprehension and creative writing. Their mathematical understanding continues to grow, particularly in problem-solving tasks. In the classroom, [Student] is an engaged and cooperative learner who contributes positively to group activities and maintains respectful relationships with peers. To further support their learning, continued practice with times tables at home would be beneficial, along with regular independent reading. [Student] is encouraged to continue their consistent effort and positive approach to learning challenges.'
 
@@ -549,20 +722,58 @@ TONE: Professional, detailed, and practical. This is an official educational doc
 
 If the teacher's notes don't cover all areas, indicate which sections need additional information.
 
-FORMATTING RULES FOR WORD COMPATIBILITY:
-- Use blank lines to separate major sections
-- For lists, use single dash '- ' for main points
-- For sub-points, use '  - ' (two spaces then dash)
-- For nested sub-points, use '    - ' (four spaces then dash)
-- NEVER use asterisks (*) or HTML bullets (•)
-- This plain text formatting must copy-paste cleanly into Microsoft Word
+CRITICAL: ALWAYS USE AUSTRALIAN ENGLISH SPELLING
+- behaviour (not behavior)
+- colour (not color)
+- centre (not center)
+- recognise (not recognize)
+- organisation (not organization)
+- practise (verb), practice (noun)
+- analyse (not analyze)
+- programme (not program, except for computer programs)
+- specialise (not specialize)
+- learnt (not learned)
 
-Example formatting:
-Section Title:
-- Main point here
-  - Sub-point with detail
-  - Another sub-point
-    - Nested detail if needed
+This is non-negotiable - all content must use Australian English spelling conventions.
+
+CRITICAL FORMATTING RULES FOR WORD COMPATIBILITY:
+
+- Use bold headers (surround with **text**) to create structure and sections
+- MAXIMUM 2 levels of bullet indentation - never go deeper
+- Reduce line spacing - use single line breaks between items
+- Structure with bold headers instead of deep nesting
+
+CORRECT formatting example:
+**LEARNING AREAS**
+
+**English**
+- Reading comprehension and fluency development
+- Creative and persuasive writing skills
+  - Focus on narrative structure
+  - Practice descriptive language
+
+**Mathematics**
+- Number sense and operations
+- Problem-solving strategies
+  - Visual representation methods
+  - Real-world application tasks
+
+INCORRECT formatting (too much nesting):
+- Main point
+  - Sub point
+    - Sub sub point (TOO DEEP - don't do this)
+      - Sub sub sub point (WAY TOO DEEP)
+
+Instead, use bold headers to break up sections:
+**Section Header**
+- Point one
+- Point two
+  - Sub-detail for point two
+
+**Next Section Header**
+- Point three
+
+This keeps content structured but prevents excessive indentation when copied to Word.
 
 CRITICAL REFINEMENT INSTRUCTIONS:
 When you receive a refinement request in the conversation history, carefully analyse what the teacher is asking you to change:
@@ -642,20 +853,59 @@ TONE: Professional, detailed, and actionable. This should be ready for immediate
 
 DETAIL LEVEL: Be specific enough that another teacher could deliver this lesson successfully.
 
-FORMATTING RULES FOR WORD COMPATIBILITY:
-- Use blank lines to separate major sections
-- For lists, use single dash '- ' for main points
-- For sub-points, use '  - ' (two spaces then dash)
-- For nested sub-points, use '    - ' (four spaces then dash)
-- NEVER use asterisks (*) or HTML bullets (•)
-- This plain text formatting must copy-paste cleanly into Microsoft Word
+CRITICAL: ALWAYS USE AUSTRALIAN ENGLISH SPELLING
+- behaviour (not behavior)
+- colour (not color)
+- centre (not center)
+- recognise (not recognize)
+- organisation (not organization)
+- practise (verb), practice (noun)
+- analyse (not analyze)
+- programme (not program, except for computer programs)
+- specialise (not specialize)
+- learnt (not learned)
 
-Example formatting:
-Section Title:
-- Main point here
-  - Sub-point with detail
-  - Another sub-point
-    - Nested detail if needed
+This is non-negotiable - all content must use Australian English spelling conventions.
+
+CRITICAL FORMATTING RULES FOR WORD COMPATIBILITY:
+
+- Use bold headers (surround with **text**) to create structure and sections
+- MAXIMUM 2 levels of bullet indentation - never go deeper
+- Reduce line spacing - use single line breaks between items
+- Structure with bold headers instead of deep nesting
+
+CORRECT formatting example:
+**LESSON STAGES:**
+
+**1. REVIEW OF PREVIOUS LEARNING (10 minutes)**
+- Quick whole-class brainstorm about story elements
+- Show visual story structure diagram
+  - Beginning: Setup/introduction
+  - Middle: Problem/conflict
+  - End: Resolution
+
+**2. EXPLICIT TEACHING ('I DO') (15 minutes)**
+- Introduce mentor text
+- Read text aloud, highlighting story structure
+  - Point out character introductions
+  - Demonstrate narrative arc
+
+INCORRECT formatting (too much nesting):
+- Main point
+  - Sub point
+    - Sub sub point (TOO DEEP - don't do this)
+      - Sub sub sub point (WAY TOO DEEP)
+
+Instead, use bold headers to break up sections:
+**Section Header**
+- Point one
+- Point two
+  - Sub-detail for point two
+
+**Next Section Header**
+- Point three
+
+This keeps content structured but prevents excessive indentation when copied to Word.
 
 CRITICAL REFINEMENT INSTRUCTIONS:
 When you receive a refinement request in the conversation history, carefully analyse what the teacher is asking you to change:
@@ -1010,7 +1260,7 @@ This selective approach ensures teachers don't lose approved content when making
                     onClick={handleClear}
                     variant="ghost"
                     size="lg"
-                    className="px-8 py-6 text-muted-foreground hover:text-foreground rounded-xl font-medium transition-all"
+                    className="px-8 py-6 bg-slate-100 hover:bg-slate-200 text-muted-foreground hover:text-foreground rounded-xl font-medium transition-all"
                   >
                     <X className="w-5 h-5 mr-2" />
                     Clear
@@ -1024,43 +1274,45 @@ This selective approach ensures teachers don't lose approved content when making
         {/* Output Display Area */}
         {generatedOutput && (
           <>
-            <Card className="mt-10 bg-white shadow-lg rounded-2xl border border-border/50 overflow-hidden">
+            <Card className="mt-10 bg-white shadow-lg rounded-2xl border border-border/50">
               <div className="p-8">
-                <div className="flex items-center justify-between gap-3 pb-5 mb-6 border-b border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-teal-50 p-2 rounded-lg text-teal-600">
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        {currentConfig.icon}
-                      </div>
+                <div className="flex items-center gap-3 pb-5 mb-6 border-b border-border">
+                  <div className="bg-teal-50 p-2 rounded-lg text-teal-600">
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      {currentConfig.icon}
                     </div>
-                    <h2 className="text-xl font-semibold text-foreground">
-                      {currentConfig.outputTitle}
-                    </h2>
                   </div>
-                  <Button
-                    onClick={handleCopyToClipboard}
-                    variant="outline"
-                    size="sm"
-                    className="sticky top-4 z-10 bg-white shadow-md hover:shadow-lg transition-all"
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="w-4 h-4 mr-2 text-green-600" />
-                        <span className="text-green-600">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy
-                      </>
-                    )}
-                  </Button>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {currentConfig.outputTitle}
+                  </h2>
                 </div>
-                <div
-                  data-testid="text-report-content"
-                  className="whitespace-pre-wrap text-base leading-relaxed text-foreground bg-slate-50 rounded-xl p-6"
-                >
-                  {generatedOutput}
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <div className="flex justify-end sticky top-4 z-20 mb-2">
+                    <Button
+                      onClick={handleCopyToClipboard}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white shadow-md hover:shadow-lg transition-all"
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="w-4 h-4 mr-2 text-green-600" />
+                          <span className="text-green-600">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <div
+                    data-testid="text-report-content"
+                    id="generated-content"
+                    className="text-base text-foreground [&_p]:mb-2 [&_p]:mt-0 [&_p]:[line-height:1.4] [&_strong]:font-semibold [&_strong]:block [&_strong]:mt-3 [&_strong]:mb-1.5 [&_ul]:my-1 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-1 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-0.5 [&_li]:[line-height:1.4] [&_ul_ul]:my-0.5 [&_ul_ul]:pl-5 [&_ul_ul_ul]:hidden [&_br]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: convertToHTML(generatedOutput) }}
+                  />
                 </div>
               </div>
             </Card>
@@ -1138,114 +1390,6 @@ This selective approach ensures teachers don't lose approved content when making
                 </div>
               </div>
             </Card>
-
-            {/* History Panel */}
-            {history.length > 0 && (
-              <div className="mt-6">
-                <Button
-                  onClick={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)}
-                  variant="outline"
-                  size="default"
-                  className="w-full border-2 border-slate-300 hover:border-teal-500 hover:bg-teal-50 transition-all shadow-sm hover:shadow-md"
-                >
-                  <HistoryIcon className="w-4 h-4 mr-2" />
-                  <span className="font-medium">
-                    View History ({history.length})
-                  </span>
-                  {isHistoryPanelOpen ? (
-                    <ChevronDown className="w-4 h-4 ml-auto" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 ml-auto" />
-                  )}
-                </Button>
-
-                {isHistoryPanelOpen && (
-                  <div className="mt-3 space-y-3">
-                    {history.map((entry, index) => {
-                      const isExpanded = expandedHistoryItems.has(index);
-                      return (
-                        <Card
-                          key={index}
-                          className={`border transition-all duration-200 cursor-pointer ${
-                            isExpanded
-                              ? "bg-white border-teal-300 shadow-md"
-                              : "bg-slate-50 border-slate-200 hover:border-teal-200 hover:shadow-sm"
-                          }`}
-                          onClick={() => toggleHistoryItem(index)}
-                        >
-                          <div className="p-4">
-                            {/* Header with timestamp and chevron */}
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span className="font-medium">
-                                  {entry.timestamp}
-                                </span>
-                              </div>
-                              <div
-                                className={`transition-transform duration-200 ${
-                                  isExpanded ? "rotate-90" : ""
-                                }`}
-                              >
-                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                              </div>
-                            </div>
-
-                            {/* Collapsed: Preview */}
-                            {!isExpanded && (
-                              <p className="text-sm text-foreground line-clamp-2">
-                                {entry.content.substring(0, 80)}
-                                {entry.content.length > 80 && "..."}
-                              </p>
-                            )}
-
-                            {/* Expanded: Full content */}
-                            {isExpanded && (
-                              <div className="mt-3 space-y-4">
-                                {/* Input Section */}
-                                <div>
-                                  <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
-                                    Input:
-                                  </p>
-                                  <div className="text-sm text-foreground bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                    {entry.input}
-                                  </div>
-                                </div>
-
-                                {/* Generated Content Section */}
-                                <div>
-                                  <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
-                                    Generated Content:
-                                  </p>
-                                  <div className="text-sm text-foreground bg-white p-4 rounded-lg border border-slate-200 whitespace-pre-wrap leading-relaxed">
-                                    {entry.content}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-                      );
-                    })}
-
-                    {/* Clear History Button */}
-                    <div className="pt-2">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleClearHistory();
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-400"
-                      >
-                        Clear History
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </>
         )}
 
@@ -1270,6 +1414,122 @@ This selective approach ensures teachers don't lose approved content when making
                 {currentConfig.buttonText}&quot; to begin
               </p>
             </div>
+          </div>
+        )}
+
+        {/* History Panel */}
+        {history.length > 0 && (
+          <div className="mt-10">
+            <Button
+              onClick={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)}
+              variant="outline"
+              size="default"
+              className="w-full border-2 border-slate-300 hover:border-teal-500 hover:bg-teal-50 transition-all shadow-sm hover:shadow-md"
+            >
+              <HistoryIcon className="w-4 h-4 mr-2" />
+              <span className="font-medium">
+                View History ({history.length})
+              </span>
+              {isHistoryPanelOpen ? (
+                <ChevronDown className="w-4 h-4 ml-auto" />
+              ) : (
+                <ChevronRight className="w-4 h-4 ml-auto" />
+              )}
+            </Button>
+
+            {isHistoryPanelOpen && (
+              <div className="mt-3 space-y-3">
+                {history.map((entry, index) => {
+                  const isExpanded = expandedHistoryItems.has(index);
+                  return (
+                    <Card
+                      key={index}
+                      className={`border transition-all duration-200 ${
+                        isExpanded
+                          ? "bg-white border-teal-300 shadow-md"
+                          : "bg-slate-50 border-slate-200 hover:border-teal-200 hover:shadow-sm"
+                      }`}
+                    >
+                      <div className="p-4">
+                        {/* Header with timestamp and chevron - CLICKABLE */}
+                        <div
+                          className="flex items-center justify-between gap-2 mb-2 cursor-pointer hover:bg-slate-100 -mx-4 px-4 py-2 rounded-t-lg transition-colors"
+                          onClick={() => toggleHistoryItem(index)}
+                        >
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span className="font-medium">
+                              {entry.timestamp}
+                            </span>
+                          </div>
+                          <div
+                            className={`transition-transform duration-200 ${
+                              isExpanded ? "rotate-90" : ""
+                            }`}
+                          >
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </div>
+
+                        {/* Collapsed: Preview - CLICKABLE */}
+                        {!isExpanded && (
+                          <p
+                            className="text-sm text-foreground line-clamp-2 cursor-pointer"
+                            onClick={() => toggleHistoryItem(index)}
+                          >
+                            {entry.content.substring(0, 80)}
+                            {entry.content.length > 80 && "..."}
+                          </p>
+                        )}
+
+                        {/* Expanded: Full content - SELECTABLE TEXT */}
+                        {isExpanded && (
+                          <div
+                            className="mt-3 space-y-4 select-text"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {/* Input Section */}
+                            <div>
+                              <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
+                                Input:
+                              </p>
+                              <div className="text-sm text-foreground bg-slate-50 p-3 rounded-lg border border-slate-200 cursor-text">
+                                {entry.input}
+                              </div>
+                            </div>
+
+                            {/* Generated Content Section */}
+                            <div>
+                              <p className="text-xs font-semibold text-teal-700 mb-2 uppercase tracking-wide">
+                                Generated Content:
+                              </p>
+                              <div className="text-sm text-foreground bg-white p-4 rounded-lg border border-slate-200 whitespace-pre-wrap leading-relaxed cursor-text">
+                                {entry.content}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+
+                {/* Clear History Button */}
+                <div className="pt-2">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearHistory();
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-xs border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800 hover:border-red-400"
+                  >
+                    Clear History
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

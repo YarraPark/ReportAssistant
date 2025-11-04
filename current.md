@@ -15,10 +15,12 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 - Tab-based navigation with independent state per tab
 - Context-specific refinement buttons (different for each assistant type)
 - Batched refinement system (select multiple options, refine once)
-- Sticky copy button (copies plain text to clipboard)
+- Rich text copy with Word formatting (HTML + plain text)
+- Sticky copy button (stays visible when scrolling)
+- HTML content rendering with proper bold headers and lists
 - Tab content persistence using localStorage
-- Generation history (last 10 per tab, expandable cards)
-- Clear button (visible when input/output present, no confirmation)
+- Generation history (last 10 per tab, expandable cards with selectable text)
+- Clear button (light grey background, preserves history)
 
 ## File Structure
 
@@ -39,19 +41,59 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 
 ## Recent Changes (Latest First)
 
-### Report Prompt Update (Just Completed)
+### Rich Text Copy & Word Formatting (Just Completed)
+- **Rich HTML Copy**: Content now copies with formatting preserved for Word
+  - **Bold headers** paste as actual bold text
+  - Bullet lists paste as proper Word bullets (not dashes)
+  - Numbered lists paste as proper Word numbering
+  - Dual-format clipboard (HTML + plain text fallback)
+- **HTML Rendering**: Content displays with rich formatting in app
+  - `**text**` renders as bold headers
+  - `- ` converts to bullet points
+  - `1. ` converts to numbered lists
+  - Proper paragraph spacing and structure
+- **System Prompts Updated**: Now instruct AI to use `**text**` for bold formatting
+- **convertToHTML Function**: Converts markdown-style text to proper HTML for display and copy
+
+### Formality Refinement Buttons (Report Assistant)
+- Added "Make More Formal" button for traditional academic language
+- Added "Make Less Formal" button for warmer, conversational tone
+- Only available for Report Commentary (not Learning/Lesson Plans)
+- Now 9 total refinement buttons for Report Assistant
+
+### Output Title Terminology Update
+- Changed from "Generated [Type]" to "Polished Draft [Type]"
+- Report: "Polished Draft Commentary"
+- Learning Plan: "Polished Draft Learning Plan"
+- Lesson Plan: "Polished Draft Lesson Plan"
+- Emphasizes refined teacher input, not AI-generated from scratch
+
+### Clear Button & History Panel Fix
+- **Clear Button**: Added light grey background (`bg-slate-100`) for better visibility
+- **History Panel**: Moved outside generatedOutput conditional
+  - Now remains visible after clicking Clear
+  - History persists independently of current draft
+  - Users can access saved generations even after clearing current work
+
+### Copy Button Improvements
+- **Sticky Positioning**: Button stays visible when scrolling long content
+- **Location**: Inside grey content box (top-right corner)
+- **Fixed overflow issue**: Removed `overflow-hidden` from parent Card
+- Always visible and accessible while viewing generated content
+
+### History Card Text Selection Fix
+- **Separate Click Zones**: Header/toggle vs content areas
+- **Clickable Header**: Timestamp and chevron area toggles expand/collapse
+- **Selectable Content**: Text in expanded cards can be freely selected and copied
+- **Event Handling**: `stopPropagation()` prevents content clicks from collapsing card
+- Improved UX with appropriate cursors (pointer vs text)
+
+### Report Prompt Update
 - Eliminated ALL structural formatting from report commentary
 - Now generates ONLY natural flowing paragraphs
 - NO headers, NO bullet points, NO section titles
 - 2-3 paragraphs, ~4 sentences each
 - Focus on natural teacher voice
-
-### Clear/Reset Redesign
-- Removed "Start Over" section entirely
-- Added Clear button near input (only shows when input/output present)
-- Ghost button style, X icon
-- No confirmation, clears current tab only
-- Keeps history intact
 
 ### History Improvements
 - Redesigned history button to be more prominent
@@ -59,12 +101,6 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 - Multiple cards can be expanded simultaneously
 - No nested scrolling - cards expand naturally
 - Chevron rotates 90° when expanded
-
-### Copy Functionality
-- Sticky copy button in output header
-- Copies plain text for Word compatibility
-- Shows "Copied!" with green checkmark for 2 seconds
-- Handles clipboard errors gracefully
 
 ### Content Persistence
 - localStorage saves current content per tab
@@ -74,7 +110,12 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 
 ### Refinement System
 - Context-specific buttons per assistant type
-- Report: 7 buttons (positive/negative, specific, strengths, growth, shorten, detail)
+- Report: 9 buttons (positive/negative, formal/informal, specific, strengths, growth, shorten, detail)
+  - "Make More Positive" / "Make Less Positive"
+  - "Make More Formal" / "Make Less Formal" (NEW)
+  - "Make More Specific"
+  - "Focus on Strengths" / "Focus on Growth Areas"
+  - "Shorten" / "Add More Detail"
 - Learning Plan: 6 buttons (detail, concise, activities, resources, specific, practical)
 - Lesson Plan: 6 buttons (detail, concise, differentiation, assessment, activities, scaffolding)
 - Batched refinements with single "Refine" button
@@ -91,13 +132,16 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 
 ### Learning Plan
 - Victorian Government template with 8 learning areas
-- Structured sections with headers
-- Plain text formatting (dashes for lists)
+- Structured sections with **bold headers** (using `**text**` format)
+- Bullet lists using `- ` converted to HTML for Word compatibility
+- Subject names in bold (e.g., **English**, **Mathematics**)
 
 ### Lesson Plan
 - NSW Department of Education structure
 - 5 lesson stages (Review, I do, We do, You do, Closure)
-- Plain text formatting (dashes for lists)
+- **Bold headers** for sections (using `**text**` format)
+- Numbered lists for stages, bullet lists for details
+- Auto-converted to rich HTML for proper Word formatting
 
 ## Technical Details
 
@@ -112,6 +156,21 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 - Accepts: `studentInfo`, `type`, `conversationHistory`
 - Returns: `{ report: string }`
 - Model: anthropic/claude-3.5-haiku (configurable in config/prompts.ts)
+
+### HTML Conversion & Rich Text Copy
+- **convertToHTML Function**: Converts markdown-style text to HTML
+  - `**text**` → `<strong>text</strong>` (bold)
+  - `- ` → `<ul><li>` (bullet lists)
+  - `1. ` → `<ol><li>` (numbered lists)
+  - Handles nested lists with proper indentation
+  - Wraps paragraphs in `<p>` tags
+- **Clipboard API**: Writes both HTML and plain text formats
+  - Word/rich text editors use HTML version
+  - Plain text editors use fallback version
+- **Content Display**: Uses `dangerouslySetInnerHTML` with Tailwind styling
+  - Custom classes for `<p>`, `<strong>`, `<ul>`, `<ol>`, `<li>`
+  - Proper spacing that translates to Word
+  - No markdown symbols visible to users
 
 ### Styling
 - Tailwind CSS with custom color scheme (teal primary)
@@ -142,14 +201,20 @@ Stack: React + TypeScript frontend, Express backend, OpenRouter API (Claude 3.5 
 
 ## TODO List (Completed)
 All recent tasks completed:
+- ✅ Rich text copy with HTML formatting for Word
+- ✅ Formality refinement buttons (Report Assistant)
+- ✅ Output title terminology ("Polished Draft" instead of "Generated")
+- ✅ History panel independence from Clear button
+- ✅ Sticky copy button with proper positioning
+- ✅ History card text selection (separate click zones)
+- ✅ Clear button styling (light grey background)
+- ✅ HTML rendering with bold headers and lists
+- ✅ System prompts updated for **text** formatting
 - ✅ Context-specific refinement buttons
 - ✅ Batched refinement system
-- ✅ Sticky copy button
 - ✅ Content persistence and history
 - ✅ History UI redesign (no nested scrolling)
-- ✅ Clear button redesign
 - ✅ Report prompt update (natural paragraphs only)
-- ✅ Removed "Saved" badges from tabs
 
 ## Next Possible Enhancements
 - Export history as PDF/Word document
@@ -177,4 +242,4 @@ Keep these in sync with `config/prompts.ts` when making changes.
 
 ---
 Last Updated: 2025-11-04
-Session Context: Report prompt updated to eliminate structural formatting
+Session Context: Implemented rich text copy with HTML formatting for Word, added formality buttons, fixed sticky copy button and history card text selection

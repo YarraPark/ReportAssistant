@@ -538,7 +538,7 @@ export default function Home() {
         {/* Footer Info */}
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground/70">
-            Powered by advanced AI • Designed for educators
+            Powered by AI • Designed for educators
           </p>
         </div>
       </main>

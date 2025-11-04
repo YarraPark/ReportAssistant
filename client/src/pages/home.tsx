@@ -135,7 +135,7 @@ export default function Home() {
             <img 
               src="/TeachAssist Logo.svg" 
               alt="TeachAssist.ai Logo" 
-              className="w-10 h-10 brightness-0 invert"
+              className="w-20 h-20 brightness-0 invert"
             />
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>

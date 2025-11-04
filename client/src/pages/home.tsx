@@ -312,10 +312,22 @@ export default function Home() {
                 </label>
 
                 {/* Dictation Tip */}
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                  <p className="text-xs text-blue-800 leading-relaxed">
-                    💡 <strong>Tip:</strong> Use Windows+H to dictate your rough thoughts - no need for perfect formatting, punctuation, or structure. Just speak naturally and we'll polish it for you.
-                  </p>
+                <div className="mb-3 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200/60 rounded-xl shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="w-5 h-5 rounded-full bg-teal-600 flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-teal-900 mb-1">
+                        Quick Tip
+                      </p>
+                      <p className="text-xs text-teal-700 leading-relaxed">
+                        Use Windows+H to dictate your rough thoughts - no need for perfect formatting, punctuation, or structure. Just speak naturally and we'll polish it for you.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <Textarea

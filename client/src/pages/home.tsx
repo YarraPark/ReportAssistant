@@ -11,7 +11,6 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  // Placeholder function for future LLM integration
   const generateReport = async () => {
     if (!studentInfo.trim()) {
       toast({
@@ -24,41 +23,39 @@ export default function Home() {
 
     setIsGenerating(true);
 
-    // TODO: LLM Integration will go here
-    // This is where we'll connect to an LLM API (OpenAI, Anthropic, etc.)
-    // to generate actual school reports based on the student information
-    // For now, this is just a placeholder implementation
-    console.log("🚀 LLM Integration Point:");
-    console.log("Input:", studentInfo);
-    console.log("Next step: Connect to LLM API to generate report");
+    try {
+      const response = await fetch("/api/generate-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ studentInfo }),
+      });
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate report");
+      }
 
-    // Placeholder report for demonstration
-    const placeholderReport = `STUDENT REPORT PREVIEW
-Generated on: ${new Date().toLocaleString()}
+      const data = await response.json();
+      setGeneratedReport(data.report);
 
-[This is where the AI-generated report will appear]
-
-Student Information Received:
-${studentInfo}
-
----
-Next Steps:
-• Integrate LLM API (OpenAI GPT-4, Anthropic Claude, etc.)
-• Define report structure and formatting
-• Add report templates and customization options
-• Implement error handling and validation
-• Add export/download functionality`;
-
-    setGeneratedReport(placeholderReport);
-    setIsGenerating(false);
-
-    toast({
-      title: "Report Generated",
-      description: "This is a placeholder. LLM integration coming soon!",
-    });
+      toast({
+        title: "Report Generated Successfully",
+        description: "Your comprehensive school report is ready.",
+      });
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error
+          ? error.message
+          : "An error occurred while generating the report. Please try again.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleClear = () => {

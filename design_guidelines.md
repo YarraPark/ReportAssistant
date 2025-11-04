@@ -1,4 +1,4 @@
-# School Report Generator - Design Guidelines
+# TeachAssist.ai - Design Guidelines
 
 ## Design Approach
 **Selected Framework:** Material Design (minimal subset) - chosen for its clean forms, excellent input components, and focus on utility-first interfaces. Drawing inspiration from Google's minimalist product pages (Google Search, Google Forms).

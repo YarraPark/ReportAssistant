@@ -1,8 +1,8 @@
-# School Report Generator - Project Documentation
+# TeachAssist.ai - Project Documentation
 
 ## Overview
 
-A minimal school report generation application with a clean, centered Google-homepage-style interface. This is a stateless web app designed as a foundation for future LLM integration.
+A professional AI-powered student report generation tool for educators with a clean, modern interface. This is a stateless web app designed as a foundation for LLM integration.
 
 **Created**: November 4, 2025
 **Status**: Foundation Complete - Ready for LLM Integration

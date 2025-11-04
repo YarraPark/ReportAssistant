@@ -1,8 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
+import dotenv from "dotenv";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Load environment variables from .env file
+dotenv.config();
+
 const app = express();
+
+app.use(cors());
 
 declare module 'http' {
   interface IncomingMessage {

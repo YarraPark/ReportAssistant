@@ -1,6 +1,6 @@
-# School Report Generator
+# TeachAssist.ai
 
-A minimal, stateless web application for generating school reports with a clean, Google-homepage-style interface.
+A professional, AI-powered student report generation tool for educators with a clean, modern interface.
 
 ## Overview
 

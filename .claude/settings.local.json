@@ -7,7 +7,8 @@
       "Bash(npx eslint:*)",
       "Bash(npm audit:*)",
       "Bash(npx prettier:*)",
-      "Bash(timeout 5 node:*)"
+      "Bash(timeout 5 node:*)",
+      "Bash(node generate-favicons.mjs:*)"
     ],
     "deny": [],
     "ask": []

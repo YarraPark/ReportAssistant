@@ -1,21 +1,19 @@
-# TeachAssist.ai - Current State (Post-Prisma Migration)
+# TeachAssist.ai - Current State
 
 **Last Updated:** 2025-11-07
-**Database:** Neon PostgreSQL
-**ORM:** Prisma (migrated from Drizzle)
+**Database:** Neon PostgreSQL (Connected ✅)
+**ORM:** Prisma
 **Schema Naming:** camelCase
-**Status:** Schema defined, awaiting DATABASE_URL in Replit Secrets
+**Status:** Operational - Database tables created, Admin dashboard live
 
 ---
 
-## 🚨 IMMEDIATE ACTION REQUIRED
+## ✅ Recent Milestones
 
-**Before continuing development:** Add `DATABASE_URL` to Replit Secrets, then run `npm run db:push`
-
-1. Click lock icon 🔒 in Replit sidebar (Tools → Secrets)
-2. Add: `DATABASE_URL` = Your Neon connection string (`postgresql://neondb_owner:...@ep-...neon.tech/neondb?sslmode=require`)
-3. Run: `npm run db:push` to create tables in Neon
-4. Verify: Start server and look for "✓ Prisma connected to database successfully"
+- **Prisma Migration Complete**: Migrated from Drizzle to Prisma ORM
+- **Database Setup**: All 6 tables created and operational
+- **Admin Dashboard**: Fully functional at `/admin` with 7 API endpoints
+- **Report Prompt Updated**: Improved tone guidance to avoid excessive adjectives and focus on observable behaviors
 
 ---
 
@@ -66,12 +64,17 @@
 
 **Application:**
 - `server/index.ts` - Express server with Prisma $connect() test
-- `server/routes.ts` - API routes
+- `server/routes.ts` - Main API routes (with admin routes registered)
+- `server/routes/admin.ts` - Admin API endpoints (7 routes)
+- `server/vite.ts` - Vite middleware (fixed to exclude /api routes)
 - `client/src/pages/home.tsx` - Main React UI
+- `client/src/pages/admin.tsx` - Admin dashboard page
+- `client/src/hooks/useAdminData.ts` - Admin data fetching hooks
 - `config/prompts.ts` - System prompts & model config
 
 **Documentation:**
 - `scripts/COPY-SCHEMA.md` - Deployment guide
+- `scripts/setup-database.md` - Database setup instructions
 - `current.md` - This file
 
 ---
@@ -137,6 +140,8 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 
 ### Three Assistant Types
 1. **Report Commentary** - Natural paragraph reports (150-200 words)
+   - Updated prompt: Avoids excessive adjectives, focuses on observable behaviors
+   - Balanced tone: Mentions both strengths and areas for development
 2. **Learning Plan** - Victorian Govt template (8 areas)
 3. **Lesson Plan** - NSW Dept structure (5 stages)
 
@@ -150,6 +155,15 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 - Generation history (last 10 per tab)
 - localStorage persistence
 
+### Admin Dashboard (`/admin`)
+- **Overview Cards**: Total Users, Active Users (30d), MRR, New Signups (7d)
+- **Revenue Breakdown**: Distribution by subscription tier
+- **Usage Statistics**: Total requests, avg per user, popular assistant types
+- **Recent Activity**: Recent signups and usage logs
+- **Key Metrics**: Churn rate, conversion rate
+- **User Management**: Searchable, paginated user list (20 per page)
+- **Auto-refresh**: Updates every 30-60 seconds
+
 ### Middleware
 - **Tracking middleware** (`server/middleware/tracking.ts`):
   - Auto-captures sessions (IP, UA, referrer, landing page)
@@ -161,10 +175,10 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 
 ## 🚀 Next Development Steps
 
-### Priority 1: Database Setup
-- [ ] Add DATABASE_URL to Replit Secrets
-- [ ] Run `npm run db:push`
-- [ ] Verify connection ("✓ Prisma connected to database successfully")
+### Priority 1: Database Setup ✅ COMPLETE
+- [x] Add DATABASE_URL to Replit Secrets
+- [x] Run `npm run db:push`
+- [x] Verify connection ("✓ Prisma connected to database successfully")
 
 ### Priority 2: Authentication
 - [ ] Choose auth strategy (Passport, NextAuth, custom)
@@ -185,12 +199,18 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 - [ ] POST /api/auth/register - Create user
 - [ ] POST /api/auth/login - Authenticate user
 - [ ] POST /api/auth/logout - End session
-- [ ] POST /api/generate-report - Generate AI content (already exists)
+- [x] POST /api/generate-report - Generate AI content ✅
 - [ ] GET /api/saved-responses - List user's saved responses
 - [ ] POST /api/saved-responses - Save response
 - [ ] DELETE /api/saved-responses/:id - Delete saved response
 - [ ] GET /api/usage - Get user's usage stats
-- [ ] GET /api/admin/metrics - Dashboard metrics (MRR, churn, etc)
+- [x] GET /api/admin/overview - Overview metrics ✅
+- [x] GET /api/admin/revenue-breakdown - Revenue by tier ✅
+- [x] GET /api/admin/usage-stats - Usage statistics ✅
+- [x] GET /api/admin/recent-signups - Recent signups ✅
+- [x] GET /api/admin/recent-usage - Recent usage ✅
+- [x] GET /api/admin/metrics - Churn & conversion ✅
+- [x] GET /api/admin/users - Paginated user list ✅
 
 ### Priority 5: Frontend Pages
 - [ ] Landing page with pricing
@@ -198,7 +218,7 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 - [ ] Dashboard (usage stats, saved responses)
 - [ ] Pricing page with Stripe checkout
 - [ ] Account settings (manage subscription)
-- [ ] Admin panel (metrics dashboard)
+- [x] Admin panel at `/admin` ✅
 
 ### Priority 6: Usage Enforcement
 - [ ] Middleware to check usage limits before generation
@@ -223,29 +243,59 @@ getTotalTokensUsed(days): Promise<{input, output, total}>
 
 ---
 
-## 📝 Migration Notes
+## 📝 Migration & Recent Changes
 
-**What Changed:**
+**Prisma Migration (Completed):**
 - ✅ Removed Drizzle ORM (drizzle-orm, drizzle-zod, drizzle-kit)
 - ✅ Added Prisma ORM (@prisma/client, prisma)
 - ✅ Created prisma/schema.prisma with 6 models
 - ✅ Updated all utilities to use Prisma queries
 - ✅ Created Prisma Client singleton pattern
-- ✅ Updated server/index.ts to use prisma.$connect()
+- ✅ Enhanced server/db.ts with detailed logging
 - ✅ Generated Prisma Client (node_modules/@prisma/client)
 
+**Admin Dashboard (Completed):**
+- ✅ Created 7 admin API endpoints at `/api/admin/*`
+- ✅ Built comprehensive dashboard UI at `/admin`
+- ✅ Implemented React Query hooks for data fetching
+- ✅ Fixed Vite catch-all route to exclude `/api` requests
+- ✅ Added detailed error logging and diagnostics
+- ✅ Auto-refresh functionality (30-60 seconds)
+
+**Report Prompt Updates:**
+- ✅ Updated to avoid excessive adjectives ("delightful", "excellent", etc.)
+- ✅ Emphasis on observable behaviors over character judgments
+- ✅ More direct, action-focused language
+- ✅ Improved example style for balanced commentary
+
 **Files Deleted:**
-- server/db.ts (old Drizzle version)
-- shared/schema.ts (Drizzle schema)
 - drizzle.config.ts
+- shared/schema.ts
 - drizzle/ folder
 
-**Tables Status:**
+**Database Status:**
 - Schema defined ✅
 - Prisma Client generated ✅
-- **Awaiting push to Neon** ⏳ (need DATABASE_URL in Secrets)
+- Tables created in Neon ✅
+- Connection operational ✅
 
 ---
 
-**Total Lines:** 197
-**Session Context:** Migrated from Drizzle to Prisma ORM with camelCase schema, created comprehensive admin metrics, next step is adding DATABASE_URL to Replit Secrets and running db:push
+## 📊 Admin Dashboard Endpoints
+
+All endpoints fully functional and returning JSON:
+
+| Endpoint | Method | Description | Status |
+|----------|--------|-------------|--------|
+| `/api/admin/overview` | GET | Total users, active users, MRR, signups | ✅ |
+| `/api/admin/revenue-breakdown` | GET | Revenue distribution by tier | ✅ |
+| `/api/admin/usage-stats` | GET | Total requests, avg/user, popular types | ✅ |
+| `/api/admin/recent-signups` | GET | Last 10 new users | ✅ |
+| `/api/admin/recent-usage` | GET | Last 10 API requests | ✅ |
+| `/api/admin/metrics` | GET | Churn & conversion rates | ✅ |
+| `/api/admin/users` | GET | Paginated user list with search | ✅ |
+
+---
+
+**Last Updated:** 2025-11-07
+**Session Context:** Completed Prisma migration, implemented full admin dashboard with 7 endpoints, updated report prompt for more balanced tone, fixed Vite API routing, database operational

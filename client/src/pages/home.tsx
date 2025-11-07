@@ -1127,7 +1127,7 @@ This selective approach ensures teachers don't lose approved content when making
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-center gap-3">
             <img
-              src="/TeachAssist Logo.svg"
+              src="/favicon.svg"
               alt="TeachAssist.ai Logo"
               className="w-20 h-20 brightness-0 invert"
             />
@@ -1400,7 +1400,7 @@ This selective approach ensures teachers don't lose approved content when making
               <div className="flex justify-center mb-4">
                 <div className="bg-white p-4 rounded-full shadow-sm">
                   <img
-                    src="/TeachAssist Logo.svg"
+                    src="/favicon.svg"
                     alt="TeachAssist.ai"
                     className="w-12 h-12 opacity-40"
                   />

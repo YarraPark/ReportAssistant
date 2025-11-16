@@ -80,15 +80,19 @@ Examples of GENERAL requests (update entire document):
 - 'Make it shorter'
 - 'Use simpler language'`,
 
-  learningPlan: `You will receive rough, unstructured notes from a teacher about creating an individualised learning plan. These may include dictated thoughts with poor formatting or punctuation. Your job is to create a structured, comprehensive learning plan based on the Victorian Government learning plan template.
+  learningPlan: `You will receive rough, unstructured notes from a teacher about creating an individualised learning plan. These may include dictated thoughts with poor formatting or punctuation. Your job is to create a structured, comprehensive learning plan based on the Victorian Government learning plan template with strong emphasis on instructional sequencing.
 
 STRUCTURE your response with these sections:
 
-**CHILD'S STRENGTHS AND LEARNING GOALS**
-Describe the child's current strengths and specific learning goals for the year.
+**BASELINE ASSESSMENT**
+Describe where the student currently is:
+- Current skill levels and knowledge
+- Strengths to build upon
+- Areas requiring development
+- Specific learning goals for the year
 
-**LEARNING AREAS**
-Address each of the following eight learning areas with specific subject matter, learning activities, skills to develop, and resources needed:
+**LEARNING AREAS WITH INSTRUCTIONAL SEQUENCES**
+Address each of the following eight learning areas. For each area, create 4-6 sequential instructional phases that show clear progression:
 
 **English**
 **Mathematics**
@@ -99,20 +103,46 @@ Address each of the following eight learning areas with specific subject matter,
 **Health and Physical Education**
 **Information and Communication Technology and Design and Technology**
 
-For each learning area, outline:
-- Subject matter to be covered
-- Learning activities to achieve goals
-- Skills the child will develop
-- Approach/methodology
-- Resources and materials needed
+For each learning area, structure the content as a ROADMAP with sequential phases:
+
+Phase 1: [Skill/Concept Name] (Estimated timeframe: X weeks)
+- What the teacher will do: [Explicit instruction, modelling, guided practice]
+- What the student will do: [Practice activities, independent work]
+- Resources needed: [Specific materials]
+- Progress check: [How to assess mastery]
+- Transition criteria: "When student can consistently [specific observable behaviour], move to Phase 2"
+
+Phase 2: [Next Skill/Concept] (Estimated timeframe: X weeks)
+- What the teacher will do: [Building on Phase 1]
+- What the student will do: [More complex applications]
+- Resources needed: [Materials]
+- Progress check: [Formative assessment method]
+- Transition criteria: "When student demonstrates [specific skill], move to Phase 3"
+
+[Continue with Phases 3-6 as needed, showing clear progression from simpler to more complex skills]
+
+INSTRUCTIONAL SEQUENCING REQUIREMENTS:
+- Each phase must build logically on the previous one
+- Show clear progression from foundational to advanced skills
+- Use transition language: "First we...", "Once the student can...", "Then we move to..."
+- Include specific timeframes for each phase
+- Define observable success criteria before advancing
+- Describe both teacher actions and student activities for each phase
+- Specify formative assessment points throughout
 
 **WHERE AND WHEN INSTRUCTION WILL TAKE PLACE**
 Describe the learning environment and schedule.
 
 **HOW LEARNING OUTCOMES WILL BE RECORDED**
-Explain the method for tracking progress.
+Explain the method for tracking progress throughout all phases.
 
-TONE: Professional, detailed, and practical. This is an official educational document.
+**FINAL ASSESSMENT CRITERIA**
+Describe how we will know the learning goals have been achieved:
+- Observable behaviours or skills that indicate mastery
+- Specific performance standards
+- Evidence to be collected
+
+TONE: Professional, detailed, and practical. This is an official educational document that reads as a clear roadmap for instruction.
 
 If the teacher's notes don't cover all areas, indicate which sections need additional information.
 

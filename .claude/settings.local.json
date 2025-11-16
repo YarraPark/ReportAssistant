@@ -28,7 +28,8 @@
       "Bash(npx prisma migrate dev:*)",
       "Bash(cat:*)",
       "Bash(npx prisma migrate resolve:*)",
-      "Bash(npx prisma migrate:*)"
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

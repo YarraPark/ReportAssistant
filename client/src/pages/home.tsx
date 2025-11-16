@@ -18,10 +18,11 @@ import {
   Copy,
   Check,
   X,
+  FileCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type AssistantType = "report" | "learning-plan" | "lesson-plan";
+type AssistantType = "report" | "learning-plan" | "lesson-plan" | "writing-assessment";
 
 // LocalStorage keys
 const STORAGE_KEYS = {
@@ -36,6 +37,10 @@ const STORAGE_KEYS = {
   "lesson-plan": {
     current: "teachassist_lessonplan_current",
     history: "teachassist_lessonplan_history",
+  },
+  "writing-assessment": {
+    current: "teachassist_assessment_current",
+    history: "teachassist_assessment_history",
   },
 } as const;
 
@@ -180,6 +185,18 @@ const TAB_CONFIGS: TabConfig[] = [
     generatingText: "Drafting Lesson...",
     outputTitle: "Polished Draft Lesson Plan",
   },
+  {
+    id: "writing-assessment",
+    label: "Assessment Assistant",
+    icon: <FileCheck className="w-5 h-5" />,
+    guidanceTitle: "Writing Assessment",
+    guidanceText:
+      "Upload a handwriting sample to assess against Australian Curriculum standards.",
+    placeholder: "",
+    buttonText: "Assess Writing",
+    generatingText: "Analyzing Handwriting...",
+    outputTitle: "Assessment Results",
+  },
 ];
 
 type RefinementOption =
@@ -259,6 +276,7 @@ const ASSISTANT_REFINEMENT_OPTIONS: Record<AssistantType, RefinementOption[]> =
       "expand-activities",
       "add-scaffolding",
     ],
+    "writing-assessment": [],
   };
 
 // Button labels for each refinement option
@@ -301,6 +319,13 @@ export default function Home() {
     new Set()
   );
   const [isCopied, setIsCopied] = useState(false);
+
+  // Assessment-specific state
+  const [yearLevel, setYearLevel] = useState<string>("");
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [imageType, setImageType] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const { toast } = useToast();
 
   const currentConfig = TAB_CONFIGS.find((tab) => tab.id === activeTab)!;
@@ -556,6 +581,292 @@ export default function Home() {
         title: "Copy Failed",
         description: "Failed to copy content to clipboard",
       });
+    }
+  };
+
+  // Get EXIF orientation from image
+  const getOrientation = (file: File): Promise<number> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const view = new DataView(e.target?.result as ArrayBuffer);
+        if (view.getUint16(0, false) !== 0xFFD8) {
+          resolve(1); // Not a JPEG
+          return;
+        }
+        const length = view.byteLength;
+        let offset = 2;
+        while (offset < length) {
+          if (view.getUint16(offset + 2, false) <= 8) {
+            resolve(1);
+            return;
+          }
+          const marker = view.getUint16(offset, false);
+          offset += 2;
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset += 2, false) !== 0x45786966) {
+              resolve(1);
+              return;
+            }
+            const little = view.getUint16(offset += 6, false) === 0x4949;
+            offset += view.getUint32(offset + 4, little);
+            const tags = view.getUint16(offset, little);
+            offset += 2;
+            for (let i = 0; i < tags; i++) {
+              if (view.getUint16(offset + (i * 12), little) === 0x0112) {
+                resolve(view.getUint16(offset + (i * 12) + 8, little));
+                return;
+              }
+            }
+          } else if ((marker & 0xFF00) !== 0xFF00) {
+            break;
+          } else {
+            offset += view.getUint16(offset, false);
+          }
+        }
+        resolve(1);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  // Image compression helper with auto-rotation
+  const compressImage = async (file: File, maxSizeMB: number = 3): Promise<File> => {
+    return new Promise(async (resolve, reject) => {
+      // Get EXIF orientation
+      const orientation = await getOrientation(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions while maintaining aspect ratio
+          const maxDimension = 2000; // Max width or height
+          if (width > height && width > maxDimension) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else if (height > maxDimension) {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+
+          // Set canvas size based on orientation
+          if (orientation > 4 && orientation < 9) {
+            canvas.width = height;
+            canvas.height = width;
+          } else {
+            canvas.width = width;
+            canvas.height = height;
+          }
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          // Apply rotation based on EXIF orientation
+          switch (orientation) {
+            case 2:
+              ctx.transform(-1, 0, 0, 1, width, 0);
+              break;
+            case 3:
+              ctx.transform(-1, 0, 0, -1, width, height);
+              break;
+            case 4:
+              ctx.transform(1, 0, 0, -1, 0, height);
+              break;
+            case 5:
+              ctx.transform(0, 1, 1, 0, 0, 0);
+              break;
+            case 6:
+              ctx.transform(0, 1, -1, 0, height, 0);
+              break;
+            case 7:
+              ctx.transform(0, -1, -1, 0, height, width);
+              break;
+            case 8:
+              ctx.transform(0, -1, 1, 0, 0, width);
+              break;
+            default:
+              break;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try different quality levels until file is under maxSizeMB
+          const tryCompress = (quality: number) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+
+                const maxBytes = maxSizeMB * 1024 * 1024;
+
+                if (blob.size <= maxBytes || quality <= 0.1) {
+                  // Success or we've tried our best
+                  const compressedFile = new File([blob], file.name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now(),
+                  });
+                  resolve(compressedFile);
+                } else {
+                  // Try again with lower quality
+                  tryCompress(quality - 0.1);
+                }
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+
+          tryCompress(0.9); // Start with 90% quality
+        };
+
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Assessment handlers
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSizeMB = 1.5; // Reduced to 1.5MB for faster uploads
+    const maxBytes = maxSizeMB * 1024 * 1024;
+
+    let processedFile = file;
+
+    // For PDFs, we can't compress them easily in browser
+    if (file.type === 'application/pdf') {
+      if (file.size > maxBytes) {
+        toast({
+          variant: "destructive",
+          title: "PDF Too Large",
+          description: `PDF size must be less than ${maxSizeMB}MB. Please compress the PDF externally or use an image instead.`,
+        });
+        e.target.value = '';
+        return;
+      }
+    } else if (file.type.startsWith('image/')) {
+      // Always compress images to ensure optimal size
+      try {
+        if (file.size > maxBytes) {
+          toast({
+            title: "Compressing Image",
+            description: "Your image is being compressed...",
+          });
+        }
+
+        processedFile = await compressImage(file, maxSizeMB);
+
+        if (file.size > maxBytes) {
+          toast({
+            title: "Image Compressed",
+            description: `Reduced from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`,
+          });
+        }
+      } catch (error) {
+        console.error('Compression error:', error);
+        toast({
+          variant: "destructive",
+          title: "Compression Failed",
+          description: "Could not compress the image. Please try a smaller file.",
+        });
+        e.target.value = '';
+        return;
+      }
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setPreviewUrl(result);
+
+      // Store base64 data (remove the data:image/xxx;base64, prefix)
+      const base64Data = result.split(',')[1];
+      setImageData(base64Data);
+      setImageType(processedFile.type);
+    };
+    reader.readAsDataURL(processedFile);
+  };
+
+  const handleAssessment = async () => {
+    if (!yearLevel || !imageData) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please select a year level and upload an image.",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch('/api/assess-writing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          yearLevel,
+          imageData,
+          imageType
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to assess writing");
+      }
+
+      const data = await response.json();
+
+      // Format assessment results for display
+      let formattedOutput = "";
+
+      // Include transcription if available
+      if (data.transcription) {
+        formattedOutput += `**Transcription:**\n${data.transcription}\n\n---\n\n`;
+      }
+
+      if (data.assessments && data.assessments.length > 0) {
+        formattedOutput += data.assessments
+          .map((a: any) => {
+            const emoji = a.percentage >= 75 ? '🟢' : a.percentage >= 50 ? '🟡' : '🔴';
+            return `${emoji} **${a.criterion}** (${a.percentage}%)\n${a.evidence}`;
+          })
+          .join('\n\n');
+      } else if (data.rawResponse) {
+        formattedOutput = data.rawResponse;
+      }
+
+      setGeneratedOutput(formattedOutput);
+
+      toast({
+        title: "Assessment Complete",
+        description: "Your handwriting sample has been analyzed.",
+      });
+    } catch (error) {
+      console.error('Assessment error:', error);
+      toast({
+        variant: "destructive",
+        title: "Assessment Failed",
+        description: error instanceof Error ? error.message : "An error occurred. Please try again.",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -1193,80 +1504,217 @@ This selective approach ensures teachers don't lose approved content when making
 
             {/* Input Section */}
             <div className="space-y-6">
-              <div>
-                <label
-                  htmlFor="input-text"
-                  className="block text-sm font-medium text-foreground mb-3"
-                >
-                  Input Information
-                </label>
+              {activeTab === "writing-assessment" ? (
+                // Assessment UI
+                <>
+                  {/* Year Level Selection */}
+                  <div>
+                    <label htmlFor="year-level" className="block text-sm font-medium text-foreground mb-3">
+                      Year Level
+                    </label>
+                    <select
+                      id="year-level"
+                      value={yearLevel}
+                      onChange={(e) => setYearLevel(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl transition-all text-base"
+                    >
+                      <option value="">Select year level...</option>
+                      <option value="Foundation">Foundation</option>
+                      <option value="Year1">Year 1</option>
+                      <option value="Year2">Year 2</option>
+                      <option value="Year3">Year 3</option>
+                      <option value="Year4">Year 4</option>
+                      <option value="Year5">Year 5</option>
+                      <option value="Year6">Year 6</option>
+                    </select>
+                  </div>
 
-                {/* Dictation Tip */}
-                <div className="mb-3 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200/60 rounded-xl shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-5 h-5 rounded-full bg-teal-600 flex items-center justify-center">
-                        <Sparkles className="w-3 h-3 text-white" />
+                  {/* File Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-3">
+                      Upload or Capture Image
+                    </label>
+
+                    {/* Quick Tip */}
+                    <div className="mb-3 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200/60 rounded-xl shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-teal-600 flex items-center justify-center">
+                            <Sparkles className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-teal-900 mb-1">
+                            Quick Tip
+                          </p>
+                          <p className="text-xs text-teal-700 leading-relaxed">
+                            Take a photo with your camera or upload an existing image. Large images will be automatically compressed.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium text-teal-900 mb-1">
-                        Quick Tip
-                      </p>
-                      <p className="text-xs text-teal-700 leading-relaxed">
-                        Use Windows+H to dictate your rough thoughts - no need
-                        to worry about formatting, punctuation, or structure.
-                        Just speak naturally and we&apos;ll polish it for you.
-                      </p>
+
+                    {/* Hidden file inputs */}
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <Input
+                      id="camera-capture"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+
+                    {/* Upload buttons */}
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('camera-capture')?.click()}
+                        className="w-full border-2 border-teal-200 hover:border-teal-400 hover:bg-teal-50"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Take Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('image-upload')?.click()}
+                        className="w-full border-2 border-teal-200 hover:border-teal-400 hover:bg-teal-50"
+                      >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Upload File
+                      </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Supports images and PDFs (images auto-compress to 1.5MB)
+                    </p>
                   </div>
-                </div>
 
-                <Textarea
-                  id="input-text"
-                  data-testid="input-student-info"
-                  placeholder={currentConfig.placeholder}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  className="min-h-64 text-base resize-none border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl p-5 transition-all"
-                  aria-label="Input information"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 justify-center pt-4">
-                <Button
-                  data-testid="button-generate"
-                  onClick={generate}
-                  disabled={isGenerating}
-                  size="lg"
-                  className="px-8 py-6 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                      {currentConfig.generatingText}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      {currentConfig.buttonText}
-                    </>
+                  {/* Image Preview */}
+                  {previewUrl && (
+                    <div className="mt-4 p-4 border-2 border-dashed border-border rounded-xl">
+                      <p className="text-sm font-medium text-foreground mb-3">Preview:</p>
+                      <img
+                        src={previewUrl}
+                        alt="Uploaded handwriting sample"
+                        className="max-w-full max-h-96 mx-auto rounded-lg"
+                      />
+                    </div>
                   )}
-                </Button>
-                {(inputText.trim() || generatedOutput) && (
-                  <Button
-                    data-testid="button-clear"
-                    onClick={handleClear}
-                    variant="ghost"
-                    size="lg"
-                    className="px-8 py-6 bg-slate-100 hover:bg-slate-200 text-muted-foreground hover:text-foreground rounded-xl font-medium transition-all"
-                  >
-                    <X className="w-5 h-5 mr-2" />
-                    Clear
-                  </Button>
-                )}
-              </div>
+
+                  {/* Assessment Button */}
+                  <div className="flex gap-4 justify-center pt-4">
+                    <Button
+                      onClick={handleAssessment}
+                      disabled={isGenerating || !yearLevel || !imageData}
+                      size="lg"
+                      className="px-8 py-6 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                          {currentConfig.generatingText}
+                        </>
+                      ) : (
+                        <>
+                          <FileCheck className="w-5 h-5 mr-2" />
+                          {currentConfig.buttonText}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                // Text-based assistants UI
+                <>
+                  <div>
+                    <label
+                      htmlFor="input-text"
+                      className="block text-sm font-medium text-foreground mb-3"
+                    >
+                      Input Information
+                    </label>
+
+                    {/* Dictation Tip */}
+                    <div className="mb-3 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200/60 rounded-xl shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-teal-600 flex items-center justify-center">
+                            <Sparkles className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-teal-900 mb-1">
+                            Quick Tip
+                          </p>
+                          <p className="text-xs text-teal-700 leading-relaxed">
+                            Use Windows+H to dictate your rough thoughts - no need
+                            to worry about formatting, punctuation, or structure.
+                            Just speak naturally and we&apos;ll polish it for you.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Textarea
+                      id="input-text"
+                      data-testid="input-student-info"
+                      placeholder={currentConfig.placeholder}
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      className="min-h-64 text-base resize-none border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl p-5 transition-all"
+                      aria-label="Input information"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 justify-center pt-4">
+                    <Button
+                      data-testid="button-generate"
+                      onClick={generate}
+                      disabled={isGenerating}
+                      size="lg"
+                      className="px-8 py-6 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-medium"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                          {currentConfig.generatingText}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          {currentConfig.buttonText}
+                        </>
+                      )}
+                    </Button>
+                    {(inputText.trim() || generatedOutput) && (
+                      <Button
+                        data-testid="button-clear"
+                        onClick={handleClear}
+                        variant="ghost"
+                        size="lg"
+                        className="px-8 py-6 bg-slate-100 hover:bg-slate-200 text-muted-foreground hover:text-foreground rounded-xl font-medium transition-all"
+                      >
+                        <X className="w-5 h-5 mr-2" />
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </Card>
@@ -1317,8 +1765,9 @@ This selective approach ensures teachers don't lose approved content when making
               </div>
             </Card>
 
-            {/* Refinement Section */}
-            <Card className="mt-6 bg-white shadow-md rounded-2xl border border-border/50 overflow-hidden">
+            {/* Refinement Section - Only show for text-based assistants */}
+            {activeTab !== "writing-assessment" && (
+              <Card className="mt-6 bg-white shadow-md rounded-2xl border border-border/50 overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <RefreshCw className="w-4 h-4 text-teal-600" />
@@ -1390,6 +1839,7 @@ This selective approach ensures teachers don't lose approved content when making
                 </div>
               </div>
             </Card>
+            )}
           </>
         )}
 

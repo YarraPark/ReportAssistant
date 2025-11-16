@@ -163,7 +163,7 @@ const TAB_CONFIGS: TabConfig[] = [
     id: "learning-plan",
     label: "Learning Plan Assistant",
     icon: <Target className="w-5 h-5" />,
-    guidanceTitle: "Individualised Learning Plan",
+    guidanceTitle: "Individual Learning Plan",
     guidanceText:
       "Provide information about the student's strengths, learning goals, and your approach to teaching across the eight learning areas: English, Mathematics, Sciences, Humanities/Social Sciences, The Arts, Languages, Health/PE, and ICT/Design Technology.",
     placeholder:

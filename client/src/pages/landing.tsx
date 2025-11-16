@@ -130,11 +130,9 @@ function MarkdownRenderer({ content }: { content: string }) {
 
 const reportSpokenText = "anne marie has really good behaviour in class is social ah has a good friend group umm she has done well at numeracy especially skip counting but needs to pay more attention in class in english her reading and writig are improving with well formed letters and use of punctuation err her reading has also improved can etll um there has been more work done at home";
 
-const reportPolishedText = `Anne Marie demonstrates consistently positive behaviour in the classroom, maintaining respectful interactions with her peers and contributing to a supportive learning environment. She has established a good social network and engages well with her classmates. In numeracy, she has shown particular strength in skip counting and continues to develop her mathematical skills.
+const reportPolishedText = `Anne Marie demonstrates consistently positive behaviour in the classroom, contributing to a supportive learning environment. She maintains strong social connections and has developed a good friendship group. In mathematics, she has shown particular strength in skip counting and continues to develop her numeracy skills. However, she would benefit from increased focus during class activities to maximise her learning potential.
 
-Her English skills are progressing nicely, with noticeable improvements in reading and writing. Anne Marie is developing well-formed letter formation and demonstrates increasing understanding of punctuation use. Her reading comprehension has advanced, supported by additional practice at home. To further support her learning, Anne Marie would benefit from maintaining her focus during class activities and continuing the consistent home learning support that has been beneficial to her progress.
-
-While Anne Marie demonstrates many positive attributes, there are opportunities to enhance her classroom engagement. Developing more consistent attention during lessons will help her maximise her learning potential and build upon the solid foundation she has already established across various learning areas.`;
+Her English skills are progressing well, with noticeable improvements in reading and writing. Anne Marie is developing well-formed letter formation and is increasingly confident in using punctuation. Her reading comprehension has advanced, likely supported by additional practice at home. Continuing to engage with reading materials and maintaining concentration during lessons will help her further develop her literacy skills.`;
 
 const reportFillerWords = ['um', 'umm', 'ah', 'err', 'er', 'uh'];
 const reportSpellingErrors = ['etll', 'writig'];

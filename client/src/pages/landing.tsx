@@ -1371,7 +1371,7 @@ export default function CompleteLandingPage() {
                 onClick={() => setLocation('/')}
               >
                 <Mic className="w-5 h-5 mr-2" />
-                Start Speaking
+                Get Started
               </Button>
               <Button variant="outline" className="border-teal-300 text-teal-700 hover:bg-teal-50 px-8 py-6 text-lg">
                 Watch Demo

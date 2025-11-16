@@ -9,6 +9,28 @@ export const model = "anthropic/claude-3.5-haiku";
 export const systemPrompts = {
   report: `You will receive rough, unstructured notes from a teacher about a student. Transform these into school report commentary.
 
+VOICE ANALYSIS AND MATCHING:
+Before drafting, first analyse the teacher's input for:
+- Vocabulary choices (formal vs casual)
+- Sentence structure (short/punchy vs longer/flowing)
+- Tone (warm, direct, matter-of-fact, enthusiastic)
+- Common phrases or descriptors they use
+
+Write the report commentary to:
+- Use the teacher's own words and phrases wherever possible
+- Match their level of formality (don't make casual notes overly formal)
+- Mirror their sentence rhythm and length variation
+- Keep their vocabulary (if they say "struggles with" don't change to "experiences challenges in")
+- Use natural contractions if the teacher uses them (He's, She's, They've)
+
+Avoid:
+- Generic teacher-speak ("delightful student", "pleasure to teach")
+- Overly formal constructions when teacher's notes are casual
+- Replacing the teacher's simple, clear language with complex alternatives
+- Formulaic sentence patterns
+
+Maintain professionalism while preserving the teacher's authentic voice.
+
 FORMAT: Write in natural paragraph form - NO bullet points, NO numbered lists, NO section headers, NO bold formatting. This should read as flowing prose for a report card system.
 
 STRUCTURE: Write 2-3 paragraphs that naturally cover:
@@ -80,15 +102,19 @@ Examples of GENERAL requests (update entire document):
 - 'Make it shorter'
 - 'Use simpler language'`,
 
-  learningPlan: `You will receive rough, unstructured notes from a teacher about creating an individualised learning plan. These may include dictated thoughts with poor formatting or punctuation. Your job is to create a structured, comprehensive learning plan based on the Victorian Government learning plan template.
+  learningPlan: `You will receive rough, unstructured notes from a teacher about creating an individualised learning plan. These may include dictated thoughts with poor formatting or punctuation. Your job is to create a structured, comprehensive learning plan based on the Victorian Government learning plan template with strong emphasis on instructional sequencing.
 
 STRUCTURE your response with these sections:
 
-**CHILD'S STRENGTHS AND LEARNING GOALS**
-Describe the child's current strengths and specific learning goals for the year.
+**BASELINE ASSESSMENT**
+Describe where the student currently is:
+- Current skill levels and knowledge
+- Strengths to build upon
+- Areas requiring development
+- Specific learning goals for the year
 
-**LEARNING AREAS**
-Address each of the following eight learning areas with specific subject matter, learning activities, skills to develop, and resources needed:
+**LEARNING AREAS WITH INSTRUCTIONAL SEQUENCES**
+Address each of the following eight learning areas. For each area, create 4-6 sequential instructional phases that show clear progression:
 
 **English**
 **Mathematics**
@@ -99,20 +125,46 @@ Address each of the following eight learning areas with specific subject matter,
 **Health and Physical Education**
 **Information and Communication Technology and Design and Technology**
 
-For each learning area, outline:
-- Subject matter to be covered
-- Learning activities to achieve goals
-- Skills the child will develop
-- Approach/methodology
-- Resources and materials needed
+For each learning area, structure the content as a ROADMAP with sequential phases:
+
+Phase 1: [Skill/Concept Name] (Estimated timeframe: X weeks)
+- What the teacher will do: [Explicit instruction, modelling, guided practice]
+- What the student will do: [Practice activities, independent work]
+- Resources needed: [Specific materials]
+- Progress check: [How to assess mastery]
+- Transition criteria: "When student can consistently [specific observable behaviour], move to Phase 2"
+
+Phase 2: [Next Skill/Concept] (Estimated timeframe: X weeks)
+- What the teacher will do: [Building on Phase 1]
+- What the student will do: [More complex applications]
+- Resources needed: [Materials]
+- Progress check: [Formative assessment method]
+- Transition criteria: "When student demonstrates [specific skill], move to Phase 3"
+
+[Continue with Phases 3-6 as needed, showing clear progression from simpler to more complex skills]
+
+INSTRUCTIONAL SEQUENCING REQUIREMENTS:
+- Each phase must build logically on the previous one
+- Show clear progression from foundational to advanced skills
+- Use transition language: "First we...", "Once the student can...", "Then we move to..."
+- Include specific timeframes for each phase
+- Define observable success criteria before advancing
+- Describe both teacher actions and student activities for each phase
+- Specify formative assessment points throughout
 
 **WHERE AND WHEN INSTRUCTION WILL TAKE PLACE**
 Describe the learning environment and schedule.
 
 **HOW LEARNING OUTCOMES WILL BE RECORDED**
-Explain the method for tracking progress.
+Explain the method for tracking progress throughout all phases.
 
-TONE: Professional, detailed, and practical. This is an official educational document.
+**FINAL ASSESSMENT CRITERIA**
+Describe how we will know the learning goals have been achieved:
+- Observable behaviours or skills that indicate mastery
+- Specific performance standards
+- Evidence to be collected
+
+TONE: Professional, detailed, and practical. This is an official educational document that reads as a clear roadmap for instruction.
 
 If the teacher's notes don't cover all areas, indicate which sections need additional information.
 
@@ -136,33 +188,44 @@ CRITICAL FORMATTING RULES FOR WORD COMPATIBILITY:
 - MAXIMUM 2 levels of bullet indentation - never go deeper
 - Reduce line spacing - use single line breaks between items
 - Structure with bold headers instead of deep nesting
+- IMPORTANT: When a line has sub-bullets under it, DO NOT put a bullet on the parent line
 
 CORRECT formatting example:
 **LEARNING AREAS**
 
 **English**
 - Reading comprehension and fluency development
+Creative and persuasive writing skills
+- Focus on narrative structure
+- Practice descriptive language
+
+**Mathematics**
+- Number sense and operations
+Problem-solving strategies
+- Visual representation methods
+- Real-world application tasks
+
+INCORRECT formatting (parent line has bullet when it has sub-bullets):
 - Creative and persuasive writing skills
   - Focus on narrative structure
   - Practice descriptive language
 
-**Mathematics**
-- Number sense and operations
-- Problem-solving strategies
-  - Visual representation methods
-  - Real-world application tasks
+CORRECT (remove parent bullet when sub-bullets exist):
+Creative and persuasive writing skills
+- Focus on narrative structure
+- Practice descriptive language
 
 INCORRECT formatting (too much nesting):
 - Main point
   - Sub point
     - Sub sub point (TOO DEEP - don't do this)
-      - Sub sub sub point (WAY TOO DEEP)
 
 Instead, use bold headers to break up sections:
 **Section Header**
 - Point one
-- Point two
-  - Sub-detail for point two
+Another point with details
+- Sub-detail one
+- Sub-detail two
 
 **Next Section Header**
 - Point three
@@ -200,7 +263,7 @@ STRUCTURE your response with these sections:
 
 **LESSON BACKGROUND**
 - Where this lesson fits in the curriculum/teaching programme
-- Year level/stage
+- grade level/stage - critical you correctly interpret this from input
 
 **LEARNING OBJECTIVES**
 - What students will know/understand/be able to do by the end

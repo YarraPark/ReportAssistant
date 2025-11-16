@@ -1521,7 +1521,7 @@ export default function CompleteLandingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl">The Assistant Every Teacher Needs</h2>
+            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl font-bold">The Assistant Every Teacher Needs</h2>
             <p className="text-gray-600 text-lg">
               Powerful tools designed specifically for educators
             </p>

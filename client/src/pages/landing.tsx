@@ -1354,7 +1354,7 @@ export default function CompleteLandingPage() {
                 AI-Powered Teaching Assistant
               </span>
             </div>
-            <h1 className="mb-6 text-teal-900 text-5xl md:text-6xl lg:text-7xl leading-tight">
+            <h1 className="mb-6 text-teal-900 text-5xl md:text-6xl lg:text-7xl leading-tight font-bold">
               The Assistant <br />
               <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
                 Every Teacher Needs
@@ -1388,7 +1388,7 @@ export default function CompleteLandingPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-8"
           >
-            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl">Three Powerful Tools</h2>
+            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl font-bold">Three Powerful Tools</h2>
             <p className="text-gray-600 text-lg md:text-xl">
               See how TeachAssistAi transforms your spoken thoughts into polished documents
             </p>
@@ -1453,7 +1453,7 @@ export default function CompleteLandingPage() {
                 <FileText className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-teal-900 text-2xl">Report Writing</h3>
+                <h3 className="text-teal-900 text-2xl font-bold">Report Writing</h3>
                 <p className="text-gray-600">Transform casual notes into professional student reports</p>
               </div>
             </div>
@@ -1475,7 +1475,7 @@ export default function CompleteLandingPage() {
                 <GraduationCap className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-teal-900 text-2xl">Lesson Planning</h3>
+                <h3 className="text-teal-900 text-2xl font-bold">Lesson Planning</h3>
                 <p className="text-gray-600">Create structured lesson plans from your spoken ideas</p>
               </div>
             </div>
@@ -1496,7 +1496,7 @@ export default function CompleteLandingPage() {
                 <ClipboardList className="w-6 h-6 text-teal-600" />
               </div>
               <div>
-                <h3 className="text-teal-900 text-2xl">Individual Learning Plans</h3>
+                <h3 className="text-teal-900 text-2xl font-bold">Individual Learning Plans</h3>
                 <p className="text-gray-600">Develop comprehensive ILPs from your observations</p>
               </div>
             </div>
@@ -1518,7 +1518,7 @@ export default function CompleteLandingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl font-bold">The Assistant Every Teacher Needs</h2>
+            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl font-bold font-[Arial,sans-serif]">The Assistant Every Teacher Needs</h2>
             <p className="text-gray-600 text-lg">
               Powerful tools designed specifically for educators
             </p>
@@ -1589,7 +1589,7 @@ export default function CompleteLandingPage() {
               viewport={{ once: true }}
               className="text-center mb-16"
             >
-              <h2 className="mb-4 text-4xl md:text-5xl">How It Works</h2>
+              <h2 className="mb-4 text-4xl md:text-5xl font-bold">How It Works</h2>
               <p className="text-teal-50 text-lg md:text-xl">
                 Three simple steps to transform your workflow
               </p>
@@ -1606,7 +1606,7 @@ export default function CompleteLandingPage() {
                 <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-4xl">1</span>
                 </div>
-                <h3 className="mb-3 text-2xl">Speak Naturally</h3>
+                <h3 className="mb-3 text-2xl font-bold">Speak Naturally</h3>
                 <p className="text-teal-50 text-base">
                   Share your thoughts about students, lessons, or plans in your own words
                 </p>
@@ -1622,7 +1622,7 @@ export default function CompleteLandingPage() {
                 <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-4xl">2</span>
                 </div>
-                <h3 className="mb-3 text-2xl">AI Processes</h3>
+                <h3 className="mb-3 text-2xl font-bold">AI Processes</h3>
                 <p className="text-teal-50 text-base">
                   Our AI removes filler words, improves grammar, and structures your content
                 </p>
@@ -1638,7 +1638,7 @@ export default function CompleteLandingPage() {
                 <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6">
                   <span className="text-4xl">3</span>
                 </div>
-                <h3 className="mb-3 text-2xl">Get Your Draft</h3>
+                <h3 className="mb-3 text-2xl font-bold">Get Your Draft</h3>
                 <p className="text-teal-50 text-base">
                   Receive a polished, professional document ready to use or customize
                 </p>
@@ -1657,7 +1657,7 @@ export default function CompleteLandingPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl">Why Teachers Love TeachAssistAi</h2>
+            <h2 className="mb-4 text-teal-900 text-4xl md:text-5xl font-bold">Why Teachers Love TeachAssistAi</h2>
           </motion.div>
 
           <div className="space-y-4">
@@ -1693,7 +1693,7 @@ export default function CompleteLandingPage() {
           className="max-w-3xl mx-auto"
         >
           <Card className="p-12 text-center bg-gradient-to-br from-teal-600 to-emerald-600 text-white border-0 shadow-2xl">
-            <h2 className="mb-6 text-4xl md:text-5xl">Ready to Transform Your Workflow?</h2>
+            <h2 className="mb-6 text-4xl md:text-5xl font-bold">Ready to Transform Your Workflow?</h2>
             <p className="mb-8 text-teal-50 text-lg md:text-xl">
               Join thousands of teachers who are saving time and improving their documentation
             </p>

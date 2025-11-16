@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -326,6 +326,9 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const { toast } = useToast();
+
+  // Ref for output section to scroll to
+  const outputSectionRef = useRef<HTMLDivElement>(null);
 
   const currentConfig = TAB_CONFIGS.find((tab) => tab.id === activeTab)!;
 
@@ -814,6 +817,14 @@ export default function Home() {
 
     setIsGenerating(true);
 
+    // Scroll to output section
+    setTimeout(() => {
+      outputSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
+
     try {
       const response = await fetch('/api/assess-writing', {
         method: 'POST',
@@ -880,6 +891,14 @@ export default function Home() {
     }
 
     setIsGenerating(true);
+
+    // Scroll to output section
+    setTimeout(() => {
+      outputSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
 
     try {
       const response = await fetch("/api/generate-report", {
@@ -993,6 +1012,14 @@ export default function Home() {
     }
 
     setIsGenerating(true);
+
+    // Scroll to output section
+    setTimeout(() => {
+      outputSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
 
     try {
       // Add refinement instruction to conversation history
@@ -1331,8 +1358,8 @@ export default function Home() {
         </Card>
 
         {/* Output Display Area */}
-        {generatedOutput && (
-          <>
+        {(generatedOutput || isGenerating) && (
+          <div ref={outputSectionRef}>
             <Card className="mt-10 bg-white shadow-lg rounded-2xl border border-border/50">
               <div className="p-8">
                 <div className="flex items-center gap-3 pb-5 mb-6 border-b border-border">
@@ -1346,38 +1373,56 @@ export default function Home() {
                   </h2>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-6">
-                  <div className="flex justify-end sticky top-4 z-20 mb-2">
-                    <Button
-                      onClick={handleCopyToClipboard}
-                      variant="outline"
-                      size="sm"
-                      className="bg-white shadow-md hover:shadow-lg transition-all"
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2 text-green-600" />
-                          <span className="text-green-600">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <div
-                    data-testid="text-report-content"
-                    id="generated-content"
-                    className="text-base text-foreground [&_p]:mb-2 [&_p]:mt-0 [&_p]:[line-height:1.4] [&_strong]:font-semibold [&_strong]:block [&_strong]:mt-3 [&_strong]:mb-1.5 [&_ul]:my-1 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-1 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-0.5 [&_li]:[line-height:1.4] [&_ul_ul]:my-0.5 [&_ul_ul]:pl-5 [&_ul_ul_ul]:hidden [&_br]:my-0.5"
-                    dangerouslySetInnerHTML={{ __html: convertToHTML(generatedOutput) }}
-                  />
+                  {isGenerating && !generatedOutput ? (
+                    // Transformation animation
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <div className="relative">
+                        <Sparkles className="w-16 h-16 text-teal-600 animate-spin" />
+                        <div className="absolute inset-0 bg-teal-600/20 rounded-full blur-xl animate-pulse"></div>
+                      </div>
+                      <p className="mt-6 text-teal-700 font-medium text-lg">
+                        {currentConfig.generatingText}
+                      </p>
+                      <p className="mt-2 text-teal-600/70 text-sm">
+                        Transforming your content into a polished draft...
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-end sticky top-4 z-20 mb-2">
+                        <Button
+                          onClick={handleCopyToClipboard}
+                          variant="outline"
+                          size="sm"
+                          className="bg-white shadow-md hover:shadow-lg transition-all"
+                        >
+                          {isCopied ? (
+                            <>
+                              <Check className="w-4 h-4 mr-2 text-green-600" />
+                              <span className="text-green-600">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4 mr-2" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <div
+                        data-testid="text-report-content"
+                        id="generated-content"
+                        className="text-base text-foreground [&_p]:mb-2 [&_p]:mt-0 [&_p]:[line-height:1.4] [&_strong]:font-semibold [&_strong]:block [&_strong]:mt-3 [&_strong]:mb-1.5 [&_ul]:my-1 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:my-1 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-0.5 [&_li]:[line-height:1.4] [&_ul_ul]:my-0.5 [&_ul_ul]:pl-5 [&_ul_ul_ul]:hidden [&_br]:my-0.5"
+                        dangerouslySetInnerHTML={{ __html: convertToHTML(generatedOutput || '') }}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </Card>
 
             {/* Refinement Section - Only show for text-based assistants */}
-            {activeTab !== "writing-assessment" && (
+            {activeTab !== "writing-assessment" && generatedOutput && (
               <Card className="mt-6 bg-white shadow-md rounded-2xl border border-border/50 overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-2">
@@ -1451,11 +1496,11 @@ export default function Home() {
               </div>
             </Card>
             )}
-          </>
+          </div>
         )}
 
         {/* Empty State Placeholder */}
-        {!generatedOutput && (
+        {!generatedOutput && !isGenerating && (
           <div className="mt-10">
             <div className="bg-gradient-to-br from-slate-50 to-blue-50/30 border-2 border-dashed border-border rounded-2xl p-12 text-center">
               <div className="flex justify-center mb-4">

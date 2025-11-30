@@ -1323,13 +1323,13 @@ export default function CompleteLandingPage() {
               <Button
                 variant="ghost"
                 className="text-teal-700 hover:text-teal-800 hover:bg-teal-50"
-                onClick={() => setLocation('/')}
+                onClick={() => setLocation('/sign-in')}
               >
                 Sign In
               </Button>
               <Button
                 className="bg-teal-600 hover:bg-teal-700 text-white"
-                onClick={() => setLocation('/')}
+                onClick={() => setLocation('/sign-up')}
               >
                 Get Started
               </Button>
@@ -1366,7 +1366,7 @@ export default function CompleteLandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 text-lg"
-                onClick={() => setLocation('/')}
+                onClick={() => setLocation('/sign-up')}
               >
                 <Mic className="w-5 h-5 mr-2" />
                 Get Started
@@ -1697,7 +1697,7 @@ export default function CompleteLandingPage() {
             </p>
             <Button
               className="bg-white text-teal-700 hover:bg-gray-50 px-8 py-6 text-lg"
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation('/sign-up')}
             >
               <Mic className="w-5 h-5 mr-2" />
               Get Started Free

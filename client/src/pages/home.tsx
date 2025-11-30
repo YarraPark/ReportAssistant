@@ -21,6 +21,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useUserSync } from "@/hooks/useUserSync";
 
 type AssistantType = "report" | "learning-plan" | "lesson-plan" | "writing-assessment";
 
@@ -304,6 +305,9 @@ const REFINEMENT_BUTTON_LABELS: Record<RefinementOption, string> = {
 };
 
 export default function Home() {
+  // Sync user with database on first load
+  useUserSync();
+
   const [activeTab, setActiveTab] = useState<AssistantType>("report");
   const [inputText, setInputText] = useState("");
   const [generatedOutput, setGeneratedOutput] = useState<string | null>(null);

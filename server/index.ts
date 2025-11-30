@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { clerkMiddleware } from "@clerk/express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { prisma } from "./db";
@@ -12,6 +13,9 @@ dotenv.config();
 const app = express();
 
 app.use(cors());
+
+// Add Clerk authentication middleware
+app.use(clerkMiddleware());
 
 declare module "http" {
   interface IncomingMessage {

@@ -4,9 +4,11 @@ import { storage } from "./storage";
 import { systemPrompts, model } from "../config/prompts";
 import { writingAssessmentModel, writingAssessmentStandards, writingAssessmentSystemPrompt } from "../config/assessment";
 import adminRoutes from "./routes/admin";
+import authRoutes from "./routes/auth";
 import { nanoid } from "nanoid";
 import { trackEvent } from "./utils/tracking";
 import { prisma } from "./db";
+import { requireAuth, requireAdmin, getAuthenticatedUser } from "./middleware/auth";
 
 // Map frontend type names to config prompt keys
 const TYPE_TO_PROMPT_KEY: Record<string, string> = {
@@ -23,15 +25,20 @@ interface Message {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Register admin routes
-  console.log('✓ Registering admin routes at /api/admin');
-  app.use('/api/admin', adminRoutes);
+  // Register auth routes (public endpoints for user sync)
+  console.log('✓ Registering auth routes at /api/auth');
+  app.use('/api/auth', authRoutes);
 
-  // Generate content using OpenRouter API
-  app.post("/api/generate-report", async (req, res) => {
+  // Register admin routes (protected - admin only)
+  console.log('✓ Registering admin routes at /api/admin');
+  app.use('/api/admin', requireAdmin, adminRoutes);
+
+  // Generate content using OpenRouter API (requires authentication)
+  app.post("/api/generate-report", requireAuth, async (req, res) => {
     const startTime = Date.now();
     const sessionId = req.sessionId || null;
-    const userId = (req.user as any)?.id || null;
+    const user = await getAuthenticatedUser(req);
+    const userId = user?.id || null;
 
     try {
       const {
@@ -251,11 +258,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Writing Assessment endpoint
-  app.post("/api/assess-writing", async (req, res) => {
+  // Writing Assessment endpoint (requires authentication)
+  app.post("/api/assess-writing", requireAuth, async (req, res) => {
     const startTime = Date.now();
     const sessionId = req.sessionId || null;
-    const userId = (req.user as any)?.id || null;
+    const user = await getAuthenticatedUser(req);
+    const userId = user?.id || null;
 
     try {
       const { yearLevel, imageData, imageType } = req.body;

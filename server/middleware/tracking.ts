@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { createSession, updateSessionActivity } from '../utils/tracking';
 
-// Extend Express Request type to include sessionId
+// Extend Express Request type to include sessionId and user
 declare global {
   namespace Express {
     interface Request {
       sessionId?: string;
+      user?: { id: string } | null;
     }
   }
 }
@@ -95,9 +96,9 @@ export async function trackingMiddleware(
       sessionId = await createSession({
         ipAddress,
         userAgent,
-        referrer,
+        referrer: typeof referrer === 'string' ? referrer : null,
         landingPage,
-        userId: (req.user as any)?.id || null, // Get userId from auth middleware if available
+        userId: req.user?.id || null,
         country,
         city,
       });

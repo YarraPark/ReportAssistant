@@ -24,6 +24,10 @@ export default defineConfig({
         ]
       : []),
   ],
+  define: {
+    // Expose CLERK_PUBLISHABLE_KEY to the frontend without requiring VITE_ prefix
+    'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(process.env.CLERK_PUBLISHABLE_KEY),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),

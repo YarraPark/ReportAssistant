@@ -54,7 +54,7 @@ export async function trackEvent(data: TrackEventData): Promise<void> {
       eventCategory: data.eventCategory,
       eventLabel: data.eventLabel || null,
       eventValue: data.eventValue || null,
-      metadata: data.metadata || null,
+      metadata: data.metadata || undefined,
       createdAt: new Date(),
     },
   });

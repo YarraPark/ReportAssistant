@@ -1,11 +1,16 @@
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { FileText, Target, GraduationCap, FileCheck, Zap, Settings, Info } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { FileText, Target, GraduationCap, FileCheck, Zap, Settings, Info, Shield, LogOut, LayoutDashboard } from "lucide-react";
 import { useLocation } from "wouter";
+import { useUser, useClerk } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
@@ -40,12 +45,35 @@ const ASSISTANT_CONFIGS = [
   },
 ];
 
+interface UserData {
+  role: string;
+}
+
 export function AppHeader({
   activeAssistant = 'report',
   onAssistantChange = () => {},
   showTabs = true
 }: AppHeaderProps) {
   const [, setLocation] = useLocation();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { signOut } = useClerk();
+
+  // Fetch user data to check if admin
+  const { data: userData } = useQuery<UserData>({
+    queryKey: ["currentUser"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me");
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: isLoaded && isSignedIn,
+  });
+
+  const isAdmin = userData?.role === "admin";
+
+  const handleSignOut = () => {
+    signOut(() => setLocation("/"));
+  };
 
   return (
     <header className="bg-teal-600 shadow-sm">
@@ -67,28 +95,84 @@ export function AppHeader({
             </Badge>
           </div>
 
-          {/* Settings Dropdown Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/20 hover:text-white"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => setLocation("/settings/about")}
-                className="hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50 focus:text-teal-700 cursor-pointer"
-              >
-                <Info className="w-4 h-4 mr-2" />
-                About
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-3">
+            {/* Settings Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 hover:text-white"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={() => setLocation("/settings/about")}
+                  className="hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50 focus:text-teal-700 cursor-pointer"
+                >
+                  <Info className="w-4 h-4 mr-2" />
+                  About
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User Avatar Menu */}
+            {isSignedIn && user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="relative h-10 w-10 rounded-full hover:bg-white/20 p-0"
+                  >
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.imageUrl} alt={user.fullName || ""} />
+                      <AvatarFallback className="bg-teal-700 text-white text-sm">
+                        {user.firstName?.[0] || user.emailAddresses[0]?.emailAddress[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{user.fullName || "User"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.emailAddresses[0]?.emailAddress}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/account")}
+                    className="cursor-pointer"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Account Security
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem
+                      onClick={() => setLocation("/admin")}
+                      className="cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Admin Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleSignOut}
+                    className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* Tab Navigation - Only show if showTabs is true */}

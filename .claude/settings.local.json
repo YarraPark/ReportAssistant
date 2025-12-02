@@ -29,7 +29,10 @@
       "Bash(cat:*)",
       "Bash(npx prisma migrate resolve:*)",
       "Bash(npx prisma migrate:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx prisma generate:*)",
+      "WebSearch",
+      "WebFetch(domain:clerk.com)"
     ],
     "deny": [],
     "ask": []

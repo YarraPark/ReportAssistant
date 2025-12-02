@@ -12,8 +12,11 @@ datasource db {
 
 model User {
   id                   String          @id @default(uuid())
+  clerkId              String?         @unique
   email                String          @unique
   name                 String
+  role                 String          @default("user")
+  subscriptionStatus   String          @default("trial")
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   lastActiveAt         DateTime        @default(now())
